@@ -1,7 +1,16 @@
-import React from "react";
-import { useEffect, useRef } from "react";
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import React, { useEffect, useRef } from "react";
+import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber'
 import { PointerLockControls } from '@react-three/drei'
+import Stars from "./Components/Stars";
+import { TextureLoader } from 'three';
+import suns from "./assets/sun.jpg";
+import earth from "./assets/earth.jpg";
+import mercury from "./assets/mercury.jpg";
+import venus from "./assets/venus.jpg";
+import mars from "./assets/mars.jpg";
+import jupyter from "./assets/jupyter.jpg";
+import saturn from "./assets/saturn.jpg";
+import saturnRings from "./assets/saturnRings.png";
 
 function PlayerControls() {
   const { camera } = useThree()
@@ -10,7 +19,7 @@ function PlayerControls() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       const v = [...velocity.current]
-      if (e.key === 'z' || e.key === 'z') v[2] = -0.2
+      if (e.key === 'z' || e.key === 'w') v[2] = -0.2
       if (e.key === 's') v[2] = 0.2
       if (e.key === 'q') v[0] = -0.2
       if (e.key === 'd') v[0] = 0.2
@@ -41,34 +50,65 @@ function PlayerControls() {
   return null
 }
 
-function Planete({ position, color, size }) {
+
+const SCALE = {
+  size: 2500, // taille / 500 earth: 
+  distance: 800_000 // distance / 1 000 000 = 1/1 000 000
+};
+
+
+const planets = [
+  { name: "Sun", size: 100_000 / SCALE.size, distance: 0, texture: `${suns}`  },
+  { name: "Mercury", size: 4_879 / SCALE.size, color: "gray", distance: 57_900_000 / SCALE.distance, texture: `${mercury}` },
+  { name: "Venus", size: 12_104 / SCALE.size, color: "orange", distance: 108_200_000 / SCALE.distance, texture: `${venus}` },
+  { name: "Earth", size: 12_742 / SCALE.size, distance: 149_600_000 / SCALE.distance, texture: `${earth}` },
+  { name: "Mars", size: 6_779 / SCALE.size, distance: 227_900_000 / SCALE.distance, texture: `${mars}`  },
+  { name: "Jupiter", size: 139_820 / SCALE.size, color: "orange", distance: 778_500_000 / SCALE.distance, texture: `${jupyter}` },
+  { name: "Saturn", size: 116_460 / SCALE.size, color: "goldenrod", distance: 1433_500_000/ SCALE.distance, texture: `${saturn}`, rings: `${saturnRings}` },
+  // { name: "Uranus", size: 50_724 / SCALE.size, color: "lightblue", distance: 2872_500_000 / SCALE.distance, texture: `${jupyter}` },
+  // { name: "Neptune", size: 49_244 / SCALE.size, color: "cyan", distance: 4495_100_000 / SCALE.distance, texture: `${jupyter}` },
+];
+
+function Planet({ name, size, distance, texture, rings }) {
+  const textureMap = useLoader(TextureLoader, texture);
+  const ringTexture = useLoader(TextureLoader, rings || texture);
+  const hasRings = !!rings;
+
   return (
-    <mesh position={position}>
-      <sphereGeometry args={[size, 32, 32]} />
-      <meshStandardMaterial color={color} />
+    <mesh position={[distance, 0, 0]}>
+      <sphereGeometry args={[size, 64, 64]} />
+      <meshStandardMaterial map={textureMap}  />
+      {hasRings && (
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[size * 1.2, size * 2, 64]} />
+          <meshStandardMaterial map={ringTexture} side={2} transparent opacity={0.8} />
+        </mesh>
+      )}
     </mesh>
-  )
+
+  );
+
 }
 
 function App() {
   return (
-<div style={{width: '100wh', height: '100vh', margin: 0, padding: 0  }}>
-<Canvas  camera={{ position: [0, 0, 30], fov: 60, near: 0.1, far: 1000 }} style={{ background: 'black' }}>
+<div style={{width: '100vw', height: '100vh', margin: 0, padding: 0  }}>
+<Canvas  camera={{ position: [0,10,200], fov: 75}}style={{ background: 'black' }}>
 <ambientLight intensity={0.5} />
-<pointLight position={[20, 20, 20]} />
+<pointLight position={[0, 0, 0]} intensity={50} color="yellow" decay={0.5} />
 <PointerLockControls />
 <PlayerControls/>
-
-
-
-{/* Soleil */}
-<Planete position={[0, 0, 0]} color="yellow" size={4} />
-
-{/* Planètes */}
-<Planete position={[10, 0, 0]} color="blue" size={2} />
-<Planete position={[20, 0, 0]} color="red" size={1.5} />
-<Planete position={[30, 0, 0]} color="green" size={1.2} />
-<Planete position={[40, 0, 0]} color="purple" size={1} />
+<Stars />
+{planets.map((planet) => (
+        <Planet
+          key={planet.name}
+          name={planet.name}
+          size={planet.size}
+          distance={planet.distance}
+          texture={planet.texture}
+          rings={planet.rings}
+        />
+      ))}
 </Canvas>
 </div>
   );
