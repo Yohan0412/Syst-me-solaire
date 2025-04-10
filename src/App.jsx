@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
-import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber'
-import { PointerLockControls } from '@react-three/drei'
+import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
+import { PointerLockControls, Text } from '@react-three/drei';
 import Stars from "./Components/Stars";
 import { TextureLoader } from 'three';
 import suns from "./assets/sun.jpg";
@@ -11,6 +11,11 @@ import mars from "./assets/mars.jpg";
 import jupyter from "./assets/jupyter.jpg";
 import saturn from "./assets/saturn.jpg";
 import saturnRings from "./assets/saturnRings.png";
+import uranus from "./assets/uranus.jpg";
+import neptune from "./assets/neptune.jpg";
+
+
+
 
 function PlayerControls() {
   const { camera } = useThree()
@@ -52,53 +57,83 @@ function PlayerControls() {
 
 
 const SCALE = {
-  size: 2500, // taille / 500 earth: 
-  distance: 800_000 // distance / 1 000 000 = 1/1 000 000
+  size: 5000 , // taille / 500 earth: 
+  distance: 1_200_000 // distance / 1 000 000 = 1/1 000 000
 };
 
 
 const planets = [
-  { name: "Sun", size: 100_000 / SCALE.size, distance: 0, texture: `${suns}`  },
-  { name: "Mercury", size: 4_879 / SCALE.size, color: "gray", distance: 57_900_000 / SCALE.distance, texture: `${mercury}` },
-  { name: "Venus", size: 12_104 / SCALE.size, color: "orange", distance: 108_200_000 / SCALE.distance, texture: `${venus}` },
-  { name: "Earth", size: 12_742 / SCALE.size, distance: 149_600_000 / SCALE.distance, texture: `${earth}` },
-  { name: "Mars", size: 6_779 / SCALE.size, distance: 227_900_000 / SCALE.distance, texture: `${mars}`  },
-  { name: "Jupiter", size: 139_820 / SCALE.size, color: "orange", distance: 778_500_000 / SCALE.distance, texture: `${jupyter}` },
-  { name: "Saturn", size: 116_460 / SCALE.size, color: "goldenrod", distance: 1433_500_000/ SCALE.distance, texture: `${saturn}`, rings: `${saturnRings}` },
-  // { name: "Uranus", size: 50_724 / SCALE.size, color: "lightblue", distance: 2872_500_000 / SCALE.distance, texture: `${jupyter}` },
-  // { name: "Neptune", size: 49_244 / SCALE.size, color: "cyan", distance: 4495_100_000 / SCALE.distance, texture: `${jupyter}` },
+  { name: "Sun", size: 200_000 / SCALE.size, distance: 0, texture: `${suns}`, rotation_speed: 0,  },
+  { name: "Mercury", size: 4_879 / SCALE.size, color: "gray", distance: 57_900_000 / SCALE.distance, texture: `${mercury}`, rotation_speed: (2 * Math.PI) / (288 * 60), },
+  { name: "Venus", size: 12_104 / SCALE.size, color: "orange", distance: 108_200_000 / SCALE.distance, texture: `${venus}`, rotation_speed: (2 * Math.PI) / (1200 * 60), },
+  { name: "Earth", size: 12_742 / SCALE.size, distance: 149_600_000 / SCALE.distance, texture: `${earth}`, rotation_speed: (2 * Math.PI) / (120 * 60), },
+  { name: "Mars", size: 6_779 / SCALE.size, distance: 227_900_000 / SCALE.distance, texture: `${mars}`, rotation_speed: (2 * Math.PI) / (123 * 60),  },
+  { name: "Jupiter", size: 130_820 / SCALE.size, color: "orange", distance: (778_500_000 / SCALE.distance) / 2 , texture: `${jupyter}`, rotation_speed: (2 * Math.PI) / (50 * 60), },
+  { name: "Saturn", size: 110_460 / SCALE.size, color: "goldenrod", distance: (1433_500_000/ SCALE.distance) / 2, texture: `${saturn}`, rings: `${saturnRings}`, rotation_speed: (2 * Math.PI) / (54 * 60), },
+  { name: "Uranus", size: 50_724 / SCALE.size, color: "lightblue", distance: (2_872_500_000 / SCALE.distance) / 2, texture: `${uranus}`, rotation_speed: (2 * Math.PI) / (86 * 60), },
+  { name: "Neptune", size: 49_244 / SCALE.size, color: "cyan", distance: (4_495_100_000 / SCALE.distance) / 2, texture: `${neptune}`, rotation_speed: (2 * Math.PI) / (80 * 60), },
 ];
 
-function Planet({ name, size, distance, texture, rings }) {
-  const textureMap = useLoader(TextureLoader, texture);
-  const ringTexture = useLoader(TextureLoader, rings || texture);
-  const hasRings = !!rings;
+
+function Ring({ size, rings }) {
+  const ringTexture = useLoader(TextureLoader, rings);
 
   return (
-    <mesh position={[distance, 0, 0]}>
-      <sphereGeometry args={[size, 64, 64]} />
-      <meshStandardMaterial map={textureMap}  />
-      {hasRings && (
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[size * 1.2, size * 2, 64]} />
-          <meshStandardMaterial map={ringTexture} side={2} transparent opacity={0.8} />
-        </mesh>
-      )}
+    <mesh rotation={[Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[size * 1.2, size * 2, 64]} />
+      <meshStandardMaterial
+        map={ringTexture}
+        side={2}
+        transparent
+        opacity={1}
+      />
     </mesh>
+  );
+}
 
+function Planet({ name, size, distance, texture, rings, rotation_speed  }) {
+  const textureMap = useLoader(TextureLoader, texture);
+  const planetRef = useRef();
+
+
+  useFrame(() => {
+    if (planetRef.current) {
+      // Rotation sur l'axe Y pour chaque planète
+      planetRef.current.rotation.y += rotation_speed; // Ajuste la vitesse de rotation ici
+    }
+  });
+
+  return (
+    <>
+    <mesh ref={planetRef} position={[distance, 0, 0]}>
+      <sphereGeometry args={[size, 64, 64]} />
+      <meshStandardMaterial map={textureMap} emissiveMap={textureMap} emissive={name === 'Sun' ? 'yellow' : 'black'} emissiveIntensity={name === 'Sun' ? 3 : 0} />
+        
+      {rings && <Ring size={size} rings={rings} />} 
+        </mesh>
+        <Text position={[distance, size + 1, 0]} fontSize={5} color="white" anchorX="center" anchorY="middle">
+        {name}
+      </Text>
+     </>
   );
 
 }
 
+
+
+
 function App() {
+
+
   return (
 <div style={{width: '100vw', height: '100vh', margin: 0, padding: 0  }}>
-<Canvas  camera={{ position: [0,10,200], fov: 75}}style={{ background: 'black' }}>
+<Canvas  camera={{ position: [50,0,100], fov: 75}}style={{ background: 'black' }}>
 <ambientLight intensity={0.5} />
 <pointLight position={[0, 0, 0]} intensity={50} color="yellow" decay={0.5} />
 <PointerLockControls />
 <PlayerControls/>
 <Stars />
+
 {planets.map((planet) => (
         <Planet
           key={planet.name}
@@ -107,9 +142,12 @@ function App() {
           distance={planet.distance}
           texture={planet.texture}
           rings={planet.rings}
+          rotation_speed={planet.rotation_speed}
+
         />
       ))}
 </Canvas>
+
 </div>
   );
 }
