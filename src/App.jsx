@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
-import { PointerLockControls, Text } from '@react-three/drei';
+import { PointerLockControls, Html } from '@react-three/drei';
 import Stars from "./Components/Stars";
 import { TextureLoader } from 'three';
 import suns from "./assets/sun.jpg";
@@ -64,14 +64,14 @@ const SCALE = {
 
 const planets = [
   { name: "Sun", size: 200_000 / SCALE.size, distance: 0, texture: `${suns}`, rotation_speed: 0,  },
-  { name: "Mercury", size: 4_879 / SCALE.size, color: "gray", distance: 57_900_000 / SCALE.distance, texture: `${mercury}`, rotation_speed: (2 * Math.PI) / (288 * 60), },
-  { name: "Venus", size: 12_104 / SCALE.size, color: "orange", distance: 108_200_000 / SCALE.distance, texture: `${venus}`, rotation_speed: (2 * Math.PI) / (1200 * 60), },
-  { name: "Earth", size: 12_742 / SCALE.size, distance: 149_600_000 / SCALE.distance, texture: `${earth}`, rotation_speed: (2 * Math.PI) / (120 * 60), },
-  { name: "Mars", size: 6_779 / SCALE.size, distance: 227_900_000 / SCALE.distance, texture: `${mars}`, rotation_speed: (2 * Math.PI) / (123 * 60),  },
-  { name: "Jupiter", size: 130_820 / SCALE.size, color: "orange", distance: (778_500_000 / SCALE.distance) / 2 , texture: `${jupyter}`, rotation_speed: (2 * Math.PI) / (50 * 60), },
-  { name: "Saturn", size: 110_460 / SCALE.size, color: "goldenrod", distance: (1433_500_000/ SCALE.distance) / 2, texture: `${saturn}`, rings: `${saturnRings}`, rotation_speed: (2 * Math.PI) / (54 * 60), },
-  { name: "Uranus", size: 50_724 / SCALE.size, color: "lightblue", distance: (2_872_500_000 / SCALE.distance) / 2, texture: `${uranus}`, rotation_speed: (2 * Math.PI) / (86 * 60), },
-  { name: "Neptune", size: 49_244 / SCALE.size, color: "cyan", distance: (4_495_100_000 / SCALE.distance) / 2, texture: `${neptune}`, rotation_speed: (2 * Math.PI) / (80 * 60), },
+  { name: "Mercury", size: 4_879 / SCALE.size, color: "gray", distance: 57_900_000 / SCALE.distance, texture: `${mercury}`, rotation_speed: (2 * Math.PI) / (288 * 60), rotation_orbitale: (2 * Math.PI) / (88 * 60) },
+  { name: "Venus", size: 12_104 / SCALE.size, color: "orange", distance: 108_200_000 / SCALE.distance, texture: `${venus}`, rotation_speed: (2 * Math.PI) / (1200 * 60), rotation_orbitale: (2 * Math.PI) / (225 * 60)},
+  { name: "Earth", size: 12_742 / SCALE.size, distance: 149_600_000 / SCALE.distance, texture: `${earth}`, rotation_speed: (2 * Math.PI) / (120 * 60), rotation_orbitale: (2 * Math.PI) / (365 * 60)},
+  { name: "Mars", size: 6_779 / SCALE.size, distance: 227_900_000 / SCALE.distance, texture: `${mars}`, rotation_speed: (2 * Math.PI) / (123 * 60), rotation_orbitale: (2 * Math.PI) / (687 * 60)  },
+  { name: "Jupiter", size: 130_820 / SCALE.size, color: "orange", distance: (778_500_000 / SCALE.distance) / 2 , texture: `${jupyter}`, rotation_speed: (2 * Math.PI) / (50 * 60), rotation_orbitale: (2 * Math.PI) / (4333 * 30) *2 }, 
+  { name: "Saturn", size: 110_460 / SCALE.size, color: "goldenrod", distance: (1433_500_000/ SCALE.distance) / 2, texture: `${saturn}`, rings: `${saturnRings}`, rotation_speed: (2 * Math.PI) / (54 * 60), rotation_orbitale: (2 * Math.PI) / (10759 * 30) * 5},
+  { name: "Uranus", size: 50_724 / SCALE.size, color: "lightblue", distance: (2_872_500_000 / SCALE.distance) / 2, texture: `${uranus}`, rotation_speed: (2 * Math.PI) / (86 * 60), rotation_orbitale: (2 * Math.PI) / (20000 * 30) * 5 },
+  { name: "Neptune", size: 49_244 / SCALE.size, color: "cyan", distance: (4_495_100_000 / SCALE.distance) / 2, texture: `${neptune}`, rotation_speed: (2 * Math.PI) / (80 * 60), rotation_orbitale: (2 * Math.PI) / (30000 * 30) * 10 },
 ];
 
 
@@ -91,29 +91,47 @@ function Ring({ size, rings }) {
   );
 }
 
-function Planet({ name, size, distance, texture, rings, rotation_speed  }) {
+function Planet({ name, size, distance, texture, rings, rotation_speed, rotation_orbitale  }) {
   const textureMap = useLoader(TextureLoader, texture);
   const planetRef = useRef();
+  const groupRef = useRef();
 
 
   useFrame(() => {
     if (planetRef.current) {
-      // Rotation sur l'axe Y pour chaque planète
-      planetRef.current.rotation.y += rotation_speed; // Ajuste la vitesse de rotation ici
+      // Rotation sur soi-même
+      planetRef.current.rotation.y += rotation_speed;
+    }
+    if (groupRef.current && name !== "Sun") {
+      // Révolution autour du Soleil
+      groupRef.current.rotation.y += rotation_orbitale ;
     }
   });
-
   return (
     <>
+    <group ref={groupRef}>
     <mesh ref={planetRef} position={[distance, 0, 0]}>
       <sphereGeometry args={[size, 64, 64]} />
-      <meshStandardMaterial map={textureMap} emissiveMap={textureMap} emissive={name === 'Sun' ? 'yellow' : 'black'} emissiveIntensity={name === 'Sun' ? 3 : 0} />
-        
+      <meshStandardMaterial map={textureMap} emissiveMap={textureMap} emissive={name === 'Sun' ? 'yellow' : 'black'} emissiveIntensity={name === 'Sun' ? 3 : 0} /> 
       {rings && <Ring size={size} rings={rings} />} 
         </mesh>
-        <Text position={[distance, size + 1, 0]} fontSize={5} color="white" anchorX="center" anchorY="middle">
+        <Html
+        position={[distance, size + 2, 0]} // Ajuste un peu plus haut
+        style={{
+          color: 'white',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          pointerEvents: 'none',
+          textShadow: '0 0 5px black',
+        }}
+        center
+        distanceFactor={250} // ajuste la taille du texte selon la distance
+      >
         {name}
-      </Text>
+      </Html>
+      </group>
+      
      </>
   );
 
@@ -133,7 +151,7 @@ function App() {
 <PointerLockControls />
 <PlayerControls/>
 <Stars />
-
+ 
 {planets.map((planet) => (
         <Planet
           key={planet.name}
@@ -143,6 +161,7 @@ function App() {
           texture={planet.texture}
           rings={planet.rings}
           rotation_speed={planet.rotation_speed}
+          rotation_orbitale={planet.rotation_orbitale}
 
         />
       ))}
